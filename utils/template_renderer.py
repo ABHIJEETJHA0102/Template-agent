@@ -91,6 +91,8 @@ class TemplateRenderer:
         """
         if version in [1, 2, 3]:
             self.template_version = version
+        else:
+            self.template_version = 1 
     
     def render_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
         """
