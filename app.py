@@ -1,7 +1,7 @@
 import os
 import sys
 import uuid
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -33,10 +33,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Define template image placeholder URLs
+TEMPLATE_PLACEHOLDER_IMAGES = {
+    1: "https://example.com/templates/modern_home_preview.jpg",
+    2: "https://example.com/templates/house_agent_preview.jpg",
+    3: "https://example.com/templates/best_home_preview.jpg",
+}
+
 # Create the agent graph
 agent = create_agent_graph()
 
- # Session storage
+# Session storage
 sessions: Dict[str, AgentState] = {}
 
 # Define request and response models
@@ -51,6 +58,62 @@ class ChatResponse(BaseModel):
     status: str
     template_version: int
 
+def get_templates() -> List[Dict]:
+    """Get information about available templates"""
+    templates = [
+        {
+            "id": 1,
+            "name": "Modern Home",
+            "description": "Classic real estate poster with modern design elements",
+            "preview_url": TEMPLATE_PLACEHOLDER_IMAGES[1],
+            "customizable_elements": [
+                "image_url", "property_price", "modern_text", "home_text", 
+                "for_sale_text", "start_from_text", "cta_text", "website_text",
+                "modern_color", "home_color", "for_sale_color", "start_from_color", 
+                "price_color", "cta_color", "website_color"
+            ],
+            "required_elements": ["image_url", "property_price"]
+        },
+        {
+            "id": 2,
+            "name": "House Agent",
+            "description": "Professional real estate agent focused template",
+            "preview_url": TEMPLATE_PLACEHOLDER_IMAGES[2],
+            "customizable_elements": [
+                "image_url", "house_agent_text", "tagline_text", "info_header_text", 
+                "contact_info_text", "text_1_color", "text_1_copy_color",
+                "text_1_copy_copy_color", "text_1_copy_copy_copy_color"
+            ],
+            "required_elements": ["image_url"]
+        },
+        {
+            "id": 3,
+            "name": "Best Home",
+            "description": "Multi-image template with prominent call-to-action",
+            "preview_url": TEMPLATE_PLACEHOLDER_IMAGES[3],
+            "customizable_elements": [
+                "image_url", "secondary_image_url1", "secondary_image_url2", "secondary_image_url3",
+                "title_1_text", "title_2_text", "cta_button_text", "info_text", "template3_website_text",
+                "title_1_color", "title_2_color", "info_color", "template3_website_color"
+            ],
+            "required_elements": ["image_url"]
+        }
+    ]
+    return templates
+
+def create_template_introduction() -> str:
+    """Create a welcome message introducing available templates"""
+    templates = get_templates()
+    welcome_msg = "👋 Welcome! I can help you create real estate poster templates. Here are the templates I can work with:\n\n"
+    
+    for template in templates:
+        welcome_msg += f"📌 Template {template['id']}: {template['name']}\n"
+        welcome_msg += f"   {template['description']}\n"
+        welcome_msg += f"   Preview: {template['preview_url']}\n\n"
+    
+    welcome_msg += "Please select a template number (1, 2, or 3) to get started, or tell me more about what you're looking for!"
+    return welcome_msg
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """Process a chat message and return the agent's response"""
@@ -61,6 +124,11 @@ async def chat_endpoint(request: ChatRequest):
     else:
         session_id = request.session_id or str(uuid.uuid4())
         state = get_initial_state()
+        
+        # Add welcome message for new sessions
+        welcome_message = create_template_introduction()
+        state["messages"].append(SystemMessage(content=f"Start the conversation by introducing yourself and providing the following template information: {welcome_message}"))
+        
         sessions[session_id] = state
     
     # Check if template is explicitly mentioned in the request query
@@ -167,48 +235,12 @@ async def chat_endpoint(request: ChatRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing message: {str(e)}")
-'''
+
 @app.get("/templates")
-async def get_templates():
+async def templates_endpoint():
     """Get information about available templates"""
-    templates = [
-        {
-            "id": 1,
-            "name": "Modern Home",
-            "description": "Classic real estate poster with modern design elements",
-            "customizable_elements": [
-                "image_url", "property_price", "modern_text", "home_text", 
-                "for_sale_text", "start_from_text", "cta_text", "website_text",
-                "modern_color", "home_color", "for_sale_color", "start_from_color", 
-                "price_color", "cta_color", "website_color"
-            ],
-            "required_elements": ["image_url", "property_price"]
-        },
-        {
-            "id": 2,
-            "name": "House Agent",
-            "description": "Professional real estate agent focused template",
-            "customizable_elements": [
-                "image_url", "house_agent_text", "tagline_text", "info_header_text", 
-                "contact_info_text", "text_1_color", "text_1_copy_color",
-                "text_1_copy_copy_color", "text_1_copy_copy_copy_color"
-            ],
-            "required_elements": ["image_url"]
-        },
-        {
-            "id": 3,
-            "name": "Best Home",
-            "description": "Multi-image template with prominent call-to-action",
-            "customizable_elements": [
-                "image_url", "secondary_image_url1", "secondary_image_url2", "secondary_image_url3",
-                "title_1_text", "title_2_text", "cta_button_text", "info_text", "template3_website_text",
-                "title_1_color", "title_2_color", "info_color", "template3_website_color"
-            ],
-            "required_elements": ["image_url"]
-        }
-    ]
-    return {"templates": templates}
-'''
+    return {"templates": get_templates()}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

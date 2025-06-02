@@ -56,17 +56,6 @@ class TemplateRenderer:
             }
         elif self.template_version == 2:
             return {
-                'image-1': {'image_url': ''},
-                'shape-1': {},
-                'shape-2': {},
-                'text-1': {'text': 'HOUSE AGENT', 'color': '#FFFFFF'},
-                'text-1-copy': {'text': 'modern | beautiful | technology', 'color': '#FFFFFF'},
-                'text-1-copy-copy': {'text': 'FOR MORE INFORMATION', 'color': 'rgb(105, 99, 65)'},
-                'shape-3': {},
-                'text-1-copy-copy-copy': {'text': '+123 456 7890 | www.lovehouse.com', 'color': 'rgb(105, 99, 65)'}
-            }
-        elif self.template_version == 3:
-            return {
                 'image-top': {'image_url': ''},
                 'photo-1': {'image_url': ''},
                 'photo-2': {'image_url': ''},
